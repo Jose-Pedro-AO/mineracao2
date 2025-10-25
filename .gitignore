@@ -1,0 +1,80 @@
+# --- AMBIENTE VIRTUAL ---
+venv/
+.env/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# --- ARQUIVOS DE CONFIGURAÇÃO E CREDENCIAIS ---
+*.env
+*.ini
+*.cfg
+*.toml
+secrets.json
+config.json
+
+# --- COMPILAÇÃO E CACHES PYTHON ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- NOTEBOOKS (checkpoints e cache) ---
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# --- LOGS E SAÍDAS ---
+*.log
+logs/
+*.out
+*.err
+
+# --- RESULTADOS E DADOS ---
+data/
+datasets/
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.json
+*.xml
+*.html
+*.zip
+*.gz
+*.pickle
+*.pkl
+
+# --- RELATÓRIOS E EXPORTAÇÕES ---
+outputs/
+exports/
+reports/
+*.pdf
+
+# --- DEPENDÊNCIAS ---
+pip-wheel-metadata/
+__pypackages__/
+*.egg-info/
+*.egg
+dist/
+build/
+develop-eggs/
+.eggs/
+
+# --- JUPYTER LAB E CONFIGURAÇÕES ---
+.jupyter/
+.ipython/
+
+# --- IDEs E SISTEMAS OPERACIONAIS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.bak
+*.swp
+*.tmp
+*.old
+
+# --- CACHE DE FERRAMENTAS ---
+.cache/
+.pytest_cache/

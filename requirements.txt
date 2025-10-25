@@ -1,0 +1,12 @@
+pandas
+requests
+beautifulsoup4
+seaborn
+matplotlib
+scipy
+statsmodels
+scikit-learn
+plotly
+wordcloud
+geopandas
+folium
