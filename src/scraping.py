@@ -2,54 +2,64 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import logging
+import os
+
+# Garante que a pasta 'logs' exista
+os.makedirs('logs', exist_ok=True)
+os.makedirs('data', exist_ok=True)
 
 # Configurar logging
-logging.basicConfig(filename='../logs/scraping_log.txt', level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename='logs/scraping_log.txt',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def scrape_site_a(base_url='http://books.toscrape.com/', max_pages=3):
-    """
-    Scraping robusto com paginação e tratamento de erros.
-    """
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+    headers = {'User-Agent': 'Mozilla/5.0'}
     produtos = []
     current_url = base_url
-    
+
     try:
         for page in range(1, max_pages + 1):
             response = requests.get(current_url, headers=headers)
-            response.raise_for_status()  # Levanta erro se falhar
+            response.raise_for_status()
             soup = BeautifulSoup(response.text, 'lxml')
-            
+
             for item in soup.select('article.product_pod'):
                 nome = item.select_one('h3 a')['title']
-                preco_str = item.select_one('p.price_color').text.strip().replace('£', '').replace(',', '.')
-                preco = float(preco_str) if preco_str else None
+                preco_str = item.select_one('p.price_color').text.strip()
+                # Limpar caracteres indesejados (ex.: £ ou �)
+                preco_clean = ''.join(filter(lambda x: x.isdigit() or x == '.', preco_str))  # Mantém apenas dígitos e ponto
+                try:
+                    preco = float(preco_clean) if preco_clean else None
+                except ValueError as e:
+                    logging.warning(f'Falha ao converter preço "{preco_str}" para float: {e}')
+                    preco = None  # Define como None se falhar
                 rating_class = item.select_one('p.star-rating')['class'][1]
                 rating_map = {'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5}
                 avaliacao = rating_map.get(rating_class, 0)
                 produtos.append({'nome': nome, 'preco': preco, 'avaliacao': avaliacao, 'fonte': 'SiteA'})
-            
-            # Paginação
+
             next_button = soup.select_one('li.next a')
             if next_button:
                 next_page = next_button['href']
-                current_url = base_url + 'catalogue/' + next_page if 'catalogue/' not in next_page else base_url + next_page
+                current_url = requests.compat.urljoin(current_url, next_page)
             else:
                 break
-            
+
             logging.info(f'Página {page} scraped com sucesso.')
-        
+
         df = pd.DataFrame(produtos)
-        df.to_csv('../data/fonte1.csv', index=False)
+        df.to_csv('data/fonte1.csv', index=False)
         logging.info('Scraping do Site A concluído.')
         return df
-    
+
     except Exception as e:
         logging.error(f'Erro no scraping: {e}')
         return pd.DataFrame()
 
-def load_site_b_csv(file_path='../data/fonte2.csv'):
+def load_site_b_csv(file_path='data/fonte2.csv'):
     """
     Carrega e pré-filtra o CSV do Site B (Kaggle e-commerce).
     """
@@ -59,7 +69,7 @@ def load_site_b_csv(file_path='../data/fonte2.csv'):
         df['fonte'] = 'SiteB'
         df['avaliacao'] = None  # Placeholder, pois não há ratings
         df = df[['nome', 'preco', 'avaliacao', 'fonte']]  # Reduzir colunas
-        df.to_csv('../data/fonte2.csv', index=False)  # Sobrescreve se necessário
+        df.to_csv('data/fonte2.csv', index=False)  # Sobrescreve se necessário
         logging.info('Carga do Site B concluída.')
         return df
     except Exception as e:

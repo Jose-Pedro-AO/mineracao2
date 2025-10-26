@@ -9,4 +9,5 @@ scikit-learn
 plotly
 wordcloud
 geopandas
-folium
+folium  
+lxml 

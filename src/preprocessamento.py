@@ -1,10 +1,25 @@
 import pandas as pd
 import hashlib
 import logging
+from pathlib import Path
+import os
+
+# === Configuração de diretórios ===
+BASE_DIR = Path(__file__).resolve().parent.parent  # Pega a pasta 'MineracaoDeDados'
+DATA_DIR = BASE_DIR / "data"
+LOG_DIR = BASE_DIR / "logs"
+OUTPUT_FILE = BASE_DIR / "dados_integrados_preprocessados.csv"
+
+# Garante que as pastas existam
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
 
 # Configurar logging
-logging.basicConfig(filename='../logs/preprocessamento_log.txt', level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename=LOG_DIR / 'preprocessamento_log.txt',
+    level=logging.INFO, 
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def integrar_fontes(df1, df2):
     """
@@ -41,7 +56,7 @@ def integrar_fontes(df1, df2):
         dados = dados[(dados['preco'] > mean_preco - 3*std_preco) & (dados['preco'] < mean_preco + 3*std_preco)]
         
         # Exportar
-        dados.to_csv('../dados_integrados_preprocessados.csv', index=False)
+        dados.to_csv('dados_integrados_preprocessados.csv', index=False)
         logging.info('Pré-processamento concluído.')
         return dados
     
@@ -51,7 +66,7 @@ def integrar_fontes(df1, df2):
 
 # Execução principal
 if __name__ == "__main__":
-    df1 = pd.read_csv('../data/fonte1.csv')
-    df2 = pd.read_csv('../data/fonte2.csv')
+    df1 = pd.read_csv('data/fonte1.csv')
+    df2 = pd.read_csv('data/fonte2.csv')
     dados = integrar_fontes(df1, df2)
     print("Pré-processamento concluído! Verifique logs em logs/preprocessamento_log.txt")
