@@ -1,59 +1,46 @@
 import pandas as pd
 import hashlib
 import logging
-from pathlib import Path
-import os
-
-# === Configuração de diretórios ===
-BASE_DIR = Path(__file__).resolve().parent.parent  # Pega a pasta 'MineracaoDeDados'
-DATA_DIR = BASE_DIR / "data"
-LOG_DIR = BASE_DIR / "logs"
-OUTPUT_FILE = BASE_DIR / "dados_integrados_preprocessados.csv"
-
-# Garante que as pastas existam
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(LOG_DIR, exist_ok=True)
 
 # Configurar logging
-logging.basicConfig(
-    filename=LOG_DIR / 'preprocessamento_log.txt',
-    level=logging.INFO, 
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(filename='logs/preprocessamento_log.txt', level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
-def integrar_fontes(df1, df2):
-    """
-    Integração, limpeza, transformação e redução.
-    """
+def integrar_fontes(df_customers, df_orders, df_items, df_reviews):
     try:
         # Padronização de colunas
-        df1.columns = df1.columns.str.strip().str.lower()
-        df2.columns = df2.columns.str.strip().str.lower()
+        for df in [df_customers, df_orders, df_items, df_reviews]:
+            df.columns = df.columns.str.strip().str.lower()
+
+        for df in [df_customers, df_orders, df_items, df_reviews]:
+            df.columns = df.columns.str.strip().str.lower()
+            if 'fonte' in df.columns:
+                df.drop(columns=['fonte'], inplace=True)
+
         
-        # Renomeação se necessário
-        df2 = df2.rename(columns={'description': 'nome', 'unitprice': 'preco'})
-        
-        # Concatenação
-        dados = pd.concat([df1, df2], ignore_index=True, sort=False)
+        # Integração (merges)
+        dados = df_orders.merge(df_customers, on='customer_id', how='left')
+        dados = dados.merge(df_items, on='order_id', how='left')
+        dados = dados.merge(df_reviews, on='order_id', how='left')
         
         # Limpeza
-        dados['preco'] = pd.to_numeric(dados['preco'], errors='coerce')
-        dados.drop_duplicates(subset=['nome'], inplace=True)
-        dados = dados.dropna(subset=['preco', 'nome'])
+        dados['price'] = pd.to_numeric(dados['price'], errors='coerce')
+        dados['freight_value'] = pd.to_numeric(dados['freight_value'], errors='coerce')
+        dados['review_score'] = pd.to_numeric(dados['review_score'], errors='coerce')
+        dados['order_purchase_timestamp'] = pd.to_datetime(dados['order_purchase_timestamp'], errors='coerce')
+        dados.drop_duplicates(inplace=True)
+        dados = dados.dropna(subset=['price', 'order_id'])  # Chaves essenciais
         
         # Transformação
-        dados['nome'] = dados['nome'].astype(str).str.upper().str.strip()
-        dados['preco_usd'] = dados['preco'] * 1.3  # Exemplo: converter £ para USD (ajuste taxa real)
-        if 'avaliacao' in dados.columns:
-            dados['avaliacao'] = pd.to_numeric(dados['avaliacao'], errors='coerce').fillna(0)
+        dados['preco_total'] = dados['price'] + dados['freight_value']  # Métrica derivada
+        dados['mes_compra'] = dados['order_purchase_timestamp'].dt.to_period('M')
+        # Anonimização
+        dados['customer_unique_id'] = dados['customer_unique_id'].apply(lambda x: hashlib.sha256(str(x).encode()).hexdigest() if pd.notnull(x) else x)
         
-        # Anonimização (ex.: hash nomes se sensível)
-        dados['nome_hash'] = dados['nome'].apply(lambda x: hashlib.sha256(x.encode()).hexdigest())
-        
-        # Redução: Remover outliers (preços > 3 STD)
-        mean_preco = dados['preco'].mean()
-        std_preco = dados['preco'].std()
-        dados = dados[(dados['preco'] > mean_preco - 3*std_preco) & (dados['preco'] < mean_preco + 3*std_preco)]
+        # Redução: Selecionar colunas relevantes
+        colunas_relevantes = ['order_id', 'customer_id', 'order_status', 'order_purchase_timestamp', 'customer_state', 
+                              'price', 'freight_value', 'preco_total', 'review_score', 'review_comment_message', 'mes_compra']
+        dados = dados[colunas_relevantes]
         
         # Exportar
         dados.to_csv('dados_integrados_preprocessados.csv', index=False)
@@ -66,7 +53,9 @@ def integrar_fontes(df1, df2):
 
 # Execução principal
 if __name__ == "__main__":
-    df1 = pd.read_csv('data/fonte1.csv')
-    df2 = pd.read_csv('data/fonte2.csv')
-    dados = integrar_fontes(df1, df2)
+    df_customers = pd.read_csv('data/fonte_customers.csv')
+    df_orders = pd.read_csv('data/fonte_orders.csv')
+    df_items = pd.read_csv('data/fonte_items.csv')
+    df_reviews = pd.read_csv('data/fonte_reviews.csv')
+    dados = integrar_fontes(df_customers, df_orders, df_items, df_reviews)
     print("Pré-processamento concluído! Verifique logs em logs/preprocessamento_log.txt")
