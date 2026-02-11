@@ -49,10 +49,58 @@ def load_reviews(file_path='data/olist_order_reviews_dataset.csv'):
         logging.error(f'Erro na carga de reviews: {e}')
         return pd.DataFrame()
 
+def load_payments(file_path='data/olist_order_payments_dataset.csv'):
+    try:
+        df = pd.read_csv(file_path)
+        df['fonte'] = 'payments'
+        logging.info('Carga de payments concluída.')
+        df.to_csv('data/fonte_payments.csv', index=False)
+        return df
+    except Exception as e:
+        logging.error(f'Erro na carga de payments: {e}')
+        return pd.DataFrame()
+
+def load_products(file_path='data/olist_products_dataset.csv'):
+    try:
+        df = pd.read_csv(file_path)
+        df['fonte'] = 'products'
+        logging.info('Carga de products concluída.')
+        df.to_csv('data/fonte_products.csv', index=False)
+        return df
+    except Exception as e:
+        logging.error(f'Erro na carga de products: {e}')
+        return pd.DataFrame()
+
+def load_sellers(file_path='data/olist_sellers_dataset.csv'):
+    try:
+        df = pd.read_csv(file_path)
+        df['fonte'] = 'sellers'
+        logging.info('Carga de sellers concluída.')
+        df.to_csv('data/fonte_sellers.csv', index=False)
+        return df
+    except Exception as e:
+        logging.error(f'Erro na carga de sellers: {e}')
+        return pd.DataFrame()
+
+def load_geolocation(file_path='data/olist_geolocation_dataset.csv'):
+    try:
+        df = pd.read_csv(file_path)
+        df['fonte'] = 'geolocation'
+        logging.info('Carga de geolocation concluída.')
+        df.to_csv('data/fonte_geolocation.csv', index=False)
+        return df
+    except Exception as e:
+        logging.error(f'Erro na carga de geolocation: {e}')
+        return pd.DataFrame()
+
 # Execução principal
 if __name__ == "__main__":
-    df_customers = load_customers()
-    df_orders = load_orders()
-    df_items = load_items()
-    df_reviews = load_reviews()
+    load_customers()
+    load_orders()
+    load_items()
+    load_reviews()
+    load_payments()
+    load_products()
+    load_sellers()
+    load_geolocation()
     print("Dados carregados! Verifique logs em logs/data_loader_log.txt")
