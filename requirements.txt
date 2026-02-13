@@ -10,4 +10,6 @@ plotly
 wordcloud
 geopandas
 folium  
-lxml 
+lxml
+streamlit
+joblib

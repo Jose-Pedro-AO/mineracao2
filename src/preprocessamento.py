@@ -61,8 +61,7 @@ def integrar_fontes():
         dados['review_score'] = pd.to_numeric(dados['review_score'], errors='coerce')
         dados['order_purchase_timestamp'] = pd.to_datetime(dados['order_purchase_timestamp'], errors='coerce')
         
-        # Remover duplicatas geradas por múltiplos items ou reviews (simplificação para análise nível pedido/item)
-        # Nota: Se um pedido tem 2 itens, teremos 2 linhas. Se tiver 2 reviews, multiplicará. 
+        # Remover duplicatas geradas por múltiplos items ou reviews
         dados.drop_duplicates(inplace=True)
         
         # Transformação
